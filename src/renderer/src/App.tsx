@@ -113,16 +113,16 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[240px_1fr]">
-        <aside className="border-b border-white/10 bg-zinc-950/90 px-3 py-5 lg:border-b-0 lg:border-r">
-          <div className="mb-6 px-2">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[220px_1fr]">
+        <aside className="border-b border-white/10 bg-zinc-950/90 px-2.5 py-4 lg:border-b-0 lg:border-r">
+          <div className="mb-5 px-1.5">
             <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
               Mida
             </p>
-            <h1 className="mt-2 text-xl font-semibold tracking-tight text-white">
+            <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-white">
               Kali Commands
             </h1>
-            <p className="mt-2 text-xs leading-5 text-zinc-400">
+            <p className="mt-1.5 text-[11px] leading-5 text-zinc-400">
               Lance des commandes utiles avec une interface plus lisible.
             </p>
           </div>
@@ -137,13 +137,13 @@ export default function App() {
                   type="button"
                   onClick={() => setSelectedAction(action.id)}
                   className={[
-                    "w-full rounded-xl border p-3 text-left transition",
+                    "w-full rounded-lg border px-3 py-2.5 text-left transition",
                     isActive
                       ? "border-amber-300/30 bg-amber-300/10"
                       : "border-white/10 bg-white/5 hover:bg-white/8"
                   ].join(" ")}
                 >
-                  <span className="text-xs font-medium text-white">{action.label}</span>
+                  <span className="text-[11px] font-medium text-white">{action.label}</span>
                 </button>
               );
             })}
@@ -151,19 +151,19 @@ export default function App() {
         </aside>
 
         <section className="flex min-h-screen flex-col">
-          <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <header className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs text-zinc-500">Action courante</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
+              <p className="text-[11px] text-zinc-500">Action courante</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">
                 {currentAction?.label}
               </h2>
-              <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-400">
+              <p className="mt-1.5 max-w-xl text-[11px] leading-5 text-zinc-400">
                 {currentAction?.description}
               </p>
             </div>
 
             <div className="flex items-center gap-3 self-start lg:self-auto">
-              <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400">
+              <div className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-400">
                 {window.mida?.platform ?? "unknown"}
               </div>
               <Button
@@ -175,13 +175,13 @@ export default function App() {
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col px-4 py-5 sm:px-6">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="flex flex-1 flex-col px-4 py-4 sm:px-5">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab("terminal")}
                 className={[
-                  "rounded-lg px-3 py-1.5 text-xs transition",
+                  "rounded-lg px-2.5 py-1.5 text-[11px] transition",
                   activeTab === "terminal"
                     ? "bg-white text-zinc-950"
                     : "bg-white/5 text-zinc-300 hover:bg-white/10"
@@ -193,7 +193,7 @@ export default function App() {
                 type="button"
                 onClick={() => setActiveTab("summary")}
                 className={[
-                  "rounded-lg px-3 py-1.5 text-xs transition",
+                  "rounded-lg px-2.5 py-1.5 text-[11px] transition",
                   activeTab === "summary"
                     ? "bg-white text-zinc-950"
                     : "bg-white/5 text-zinc-300 hover:bg-white/10"
@@ -204,74 +204,74 @@ export default function App() {
             </div>
 
             {activeTab === "terminal" ? (
-              <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
-                <div className="border-b border-white/10 px-4 py-2.5 text-xs text-zinc-400">
+              <div className="flex-1 overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
+                <div className="border-b border-white/10 px-3 py-2 text-[11px] text-zinc-400">
                   Terminal classique
                 </div>
-                <pre className="h-full overflow-auto p-4 font-mono text-xs leading-6 text-zinc-200">
+                <pre className="h-full overflow-auto p-3 font-mono text-[11px] leading-5 text-zinc-200">
                   {terminalOutput}
                 </pre>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {summary.length > 0 ? (
                   summary.map((item) => (
                     <article
                       key={item.name}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                      className="rounded-xl border border-white/10 bg-white/5 p-3.5"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <h3 className="text-base font-medium text-white">{item.name}</h3>
-                          <p className="mt-1 text-xs text-zinc-400">
+                          <h3 className="text-sm font-medium text-white">{item.name}</h3>
+                          <p className="mt-1 text-[11px] text-zinc-400">
                             Etat: {item.state}
                           </p>
                         </div>
-                        <div className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-zinc-400">
+                        <div className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
                           interface
                         </div>
                       </div>
 
-                      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        <div className="rounded-xl bg-zinc-900/80 p-3">
-                          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                      <div className="mt-3 grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="rounded-lg bg-zinc-900/80 p-3">
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
                             MAC
                           </p>
-                          <p className="mt-2 break-all font-mono text-xs text-zinc-200">
+                          <p className="mt-1.5 break-all font-mono text-[11px] text-zinc-200">
                             {item.mac ?? "N/A"}
                           </p>
                         </div>
 
-                        <div className="rounded-xl bg-zinc-900/80 p-3">
-                          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                        <div className="rounded-lg bg-zinc-900/80 p-3">
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
                             IPv4
                           </p>
                           <div className="mt-2 space-y-2">
                             {item.ipv4.length > 0 ? (
                               item.ipv4.map((value) => (
-                                <p key={value} className="font-mono text-xs text-zinc-200">
+                                <p key={value} className="font-mono text-[11px] text-zinc-200">
                                   {value}
                                 </p>
                               ))
                             ) : (
-                              <p className="font-mono text-xs text-zinc-500">N/A</p>
+                              <p className="font-mono text-[11px] text-zinc-500">N/A</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="rounded-xl bg-zinc-900/80 p-3">
-                          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                        <div className="rounded-lg bg-zinc-900/80 p-3">
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
                             IPv6
                           </p>
                           <div className="mt-2 space-y-2">
                             {item.ipv6.length > 0 ? (
                               item.ipv6.map((value) => (
-                                <p key={value} className="font-mono text-xs text-zinc-200">
+                                <p key={value} className="font-mono text-[11px] text-zinc-200">
                                   {value}
                                 </p>
                               ))
                             ) : (
-                              <p className="font-mono text-xs text-zinc-500">N/A</p>
+                              <p className="font-mono text-[11px] text-zinc-500">N/A</p>
                             )}
                           </div>
                         </div>
@@ -279,7 +279,7 @@ export default function App() {
                     </article>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-xs text-zinc-400">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-[11px] text-zinc-400">
                     Aucune information a afficher pour le moment.
                   </div>
                 )}
