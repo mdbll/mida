@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type ActionId = "ipAddress";
@@ -23,7 +23,7 @@ type InterfaceSummary = {
 const ACTIONS: Array<{ id: ActionId; label: string; description: string }> = [
   {
     id: "ipAddress",
-    label: "ip a",
+    label: "Reseau",
     description: "Inspecter les interfaces et les adresses IP"
   }
 ];
@@ -64,10 +64,6 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<CommandResult | null>(null);
 
-  useEffect(() => {
-    void handleRun("ipAddress");
-  }, []);
-
   async function handleRun(actionId: ActionId) {
     setIsRunning(true);
     setActiveAction(actionId);
@@ -95,10 +91,11 @@ export default function App() {
     () => parseIpAddressOutput(result?.stdout ?? ""),
     [result?.stdout]
   );
+  const currentAction = ACTIONS.find((action) => action.id === selectedAction);
 
   const terminalOutput = useMemo(() => {
     if (!result) {
-      return "Aucune commande lancee.";
+      return "Aucune commande executee.";
     }
 
     const blocks = [`$ ${result.command}`];
@@ -116,8 +113,8 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="grid min-h-screen grid-cols-[240px_1fr]">
-        <aside className="border-r border-white/10 bg-zinc-950/90 px-3 py-5">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[240px_1fr]">
+        <aside className="border-b border-white/10 bg-zinc-950/90 px-3 py-5 lg:border-b-0 lg:border-r">
           <div className="mb-6 px-2">
             <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
               Mida
@@ -130,7 +127,7 @@ export default function App() {
             </p>
           </div>
 
-          <nav className="space-y-2">
+          <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {ACTIONS.map((action) => {
               const isActive = action.id === selectedAction;
 
@@ -146,15 +143,7 @@ export default function App() {
                       : "border-white/10 bg-white/5 hover:bg-white/8"
                   ].join(" ")}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-white">{action.label}</span>
-                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-zinc-400">
-                      action
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-zinc-400">
-                    {action.description}
-                  </p>
+                  <span className="text-xs font-medium text-white">{action.label}</span>
                 </button>
               );
             })}
@@ -162,15 +151,18 @@ export default function App() {
         </aside>
 
         <section className="flex min-h-screen flex-col">
-          <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+          <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs text-zinc-500">Action courante</p>
               <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
-                {ACTIONS.find((action) => action.id === activeAction)?.label}
+                {currentAction?.label}
               </h2>
+              <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-400">
+                {currentAction?.description}
+              </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 self-start lg:self-auto">
               <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400">
                 {window.mida?.platform ?? "unknown"}
               </div>
@@ -183,8 +175,8 @@ export default function App() {
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col px-6 py-5">
-            <div className="mb-4 flex items-center gap-2">
+          <div className="flex flex-1 flex-col px-4 py-5 sm:px-6">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab("terminal")}
@@ -240,7 +232,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         <div className="rounded-xl bg-zinc-900/80 p-3">
                           <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
                             MAC
