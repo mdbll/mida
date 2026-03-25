@@ -1,0 +1,103 @@
+import { useEffect, useRef, useState } from "react";
+import type {
+  CommandEvent,
+  CommandRequest,
+  CommandResult
+} from "../../../../shared/commands";
+
+export function useCommandRunner() {
+  const [isRunning, setIsRunning] = useState(false);
+  const [result, setResult] = useState<CommandResult | null>(null);
+  const [terminalOutput, setTerminalOutput] = useState("Aucune commande executee.");
+  const [liveCommand, setLiveCommand] = useState("");
+  const activeRunIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!window.mida?.onCommandEvent) {
+      return;
+    }
+
+    return window.mida.onCommandEvent((event: CommandEvent) => {
+      if (event.runId !== activeRunIdRef.current) {
+        return;
+      }
+
+      if (event.type === "start") {
+        const command = event.command ?? "";
+        setLiveCommand(command);
+        setTerminalOutput(command ? `$ ${command}\n\n` : "");
+        return;
+      }
+
+      if (event.type === "stdout" || event.type === "stderr") {
+        setTerminalOutput((current) => `${current}${event.chunk ?? ""}`);
+        return;
+      }
+
+      if (event.type === "complete" && event.result) {
+        setResult(event.result);
+        setIsRunning(false);
+      }
+    });
+  }, []);
+
+  async function run(request: Omit<CommandRequest, "runId">) {
+    const runId = crypto.randomUUID();
+    activeRunIdRef.current = runId;
+    setIsRunning(true);
+    setResult(null);
+    setLiveCommand("");
+    setTerminalOutput("");
+
+    try {
+      if (!window.mida?.runCommand) {
+        const fallback: CommandResult = {
+          ok: false,
+          actionId: request.actionId,
+          command: "preload unavailable",
+          stdout: "",
+          stderr: "L'API preload Electron n'est pas disponible."
+        };
+
+        setResult(fallback);
+        setTerminalOutput(`$ ${fallback.command}\n\n${fallback.stderr}`);
+        setIsRunning(false);
+        return fallback;
+      }
+
+      return await window.mida.runCommand({
+        ...request,
+        runId
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erreur inattendue pendant l'execution.";
+      const fallback: CommandResult = {
+        ok: false,
+        actionId: request.actionId,
+        command: "command failed",
+        stdout: "",
+        stderr: message
+      };
+
+      setResult(fallback);
+      setTerminalOutput((current) => `${current}${current ? "\n" : ""}${message}`);
+      setIsRunning(false);
+      return fallback;
+    }
+  }
+
+  function clearTerminal() {
+    setTerminalOutput("Terminal vide.");
+    setLiveCommand("");
+  }
+
+  return {
+    clearTerminal,
+    isRunning,
+    liveCommand,
+    result,
+    run,
+    terminalOutput
+  };
+}

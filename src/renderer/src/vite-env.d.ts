@@ -1,49 +1,14 @@
 /// <reference types="vite/client" />
+import type { CommandEvent, CommandRequest, CommandResult } from "../../shared/commands";
 
-interface Window {
-  mida: {
-    platform: string;
-    runCommand: (request: {
-      runId: string;
-      actionId:
-        | "ipAddress"
-        | "nmapDiscovery"
-        | "nmapQuick"
-        | "nmapServices"
-        | "nmapPorts";
-      payload?: {
-        target?: string;
-        portRange?: string;
-      };
-    }) => Promise<{
-      ok: boolean;
-      actionId:
-        | "ipAddress"
-        | "nmapDiscovery"
-        | "nmapQuick"
-        | "nmapServices"
-        | "nmapPorts";
-      command: string;
-      stdout: string;
-      stderr: string;
-    }>;
-    onCommandEvent: (callback: (event: {
-      runId: string;
-      type: "start" | "stdout" | "stderr" | "complete";
-      command?: string;
-      chunk?: string;
-      result?: {
-        ok: boolean;
-        actionId:
-          | "ipAddress"
-          | "nmapDiscovery"
-          | "nmapQuick"
-          | "nmapServices"
-          | "nmapPorts";
-        command: string;
-        stdout: string;
-        stderr: string;
-      };
-    }) => void) => () => void;
-  };
+declare global {
+  interface Window {
+    mida: {
+      platform: string;
+      runCommand: (request: CommandRequest) => Promise<CommandResult>;
+      onCommandEvent: (callback: (event: CommandEvent) => void) => () => void;
+    };
+  }
 }
+
+export {};

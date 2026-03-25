@@ -1,95 +1,8 @@
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { app, BrowserWindow, ipcMain } from "electron";
-
-type ActionId =
-  | "ipAddress"
-  | "nmapDiscovery"
-  | "nmapQuick"
-  | "nmapServices"
-  | "nmapPorts";
-
-type CommandPayload = {
-  target?: string;
-  portRange?: string;
-};
-
-type CommandRequest = {
-  runId: string;
-  actionId: ActionId;
-  payload: CommandPayload;
-};
-
-const STATIC_COMMANDS = {
-  ipAddress: {
-    command: "ip",
-    args: ["a"]
-  }
-} as const;
-
-function isSafeTarget(value: string): boolean {
-  return /^[a-zA-Z0-9./:_-]+$/.test(value);
-}
-
-function isSafePortRange(value: string): boolean {
-  return /^\d{1,5}(-\d{1,5})?$/.test(value);
-}
-
-function resolveCommand(actionId: ActionId, payload: CommandPayload) {
-  if (actionId === "ipAddress") {
-    return STATIC_COMMANDS.ipAddress;
-  }
-
-  const target = payload.target?.trim();
-
-  if (!target) {
-    throw new Error("Target is required");
-  }
-
-  if (!isSafeTarget(target)) {
-    throw new Error("Invalid target");
-  }
-
-  switch (actionId) {
-    case "nmapDiscovery":
-      return {
-        command: "nmap",
-        args: ["--stats-every", "2s", "-sn", target]
-      };
-    case "nmapQuick":
-      return {
-        command: "nmap",
-        args: ["--stats-every", "2s", "-T4", "-F", target]
-      };
-    case "nmapServices":
-      return {
-        command: "nmap",
-        args: ["--stats-every", "2s", "-sV", "-Pn", target]
-      };
-    case "nmapPorts": {
-      const portRange = payload.portRange?.trim();
-
-      if (!portRange) {
-        throw new Error("Port range is required");
-      }
-
-      if (!isSafePortRange(portRange)) {
-        throw new Error("Invalid port range");
-      }
-
-      return {
-        command: "nmap",
-        args: ["--stats-every", "2s", "-sV", "-Pn", "-p", portRange, target]
-      };
-    }
-    default:
-      throw new Error("Unknown action");
-  }
-}
-
-function buildCommandLine(command: string, args: readonly string[]): string {
-  return [command, ...args].join(" ");
-}
+import type { CommandRequest, CommandResult } from "../shared/commands";
+import { buildCommandLine, resolveCommand } from "./commands";
 
 ipcMain.handle(
   "command:run",
@@ -104,13 +17,7 @@ ipcMain.handle(
       command: commandLine
     });
 
-    return await new Promise<{
-      ok: boolean;
-      actionId: ActionId;
-      command: string;
-      stdout: string;
-      stderr: string;
-    }>((resolve) => {
+    return await new Promise<CommandResult>((resolve) => {
       const child = spawn(action.command, action.args, {
         stdio: ["ignore", "pipe", "pipe"]
       });
@@ -119,13 +26,7 @@ ipcMain.handle(
       let stderr = "";
       let settled = false;
 
-      const finish = (result: {
-        ok: boolean;
-        actionId: ActionId;
-        command: string;
-        stdout: string;
-        stderr: string;
-      }) => {
+      const finish = (result: CommandResult) => {
         if (settled) {
           return;
         }
