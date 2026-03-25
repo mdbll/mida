@@ -12,6 +12,7 @@ export type CommandPayload = {
   host?: string;
   target?: string;
   portRange?: string;
+  username?: string;
   wordlist?: string;
 };
 

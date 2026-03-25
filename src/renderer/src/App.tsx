@@ -22,6 +22,7 @@ export default function App() {
   const [target, setTarget] = useState("192.168.1.1");
   const [selectedPortRange, setSelectedPortRange] = useState<string>("1-1000");
   const [customPortRange, setCustomPortRange] = useState("1-65535");
+  const [username, setUsername] = useState("admin");
   const [wordlist, setWordlist] = useState("wordlists/passwords.txt");
   const [validationError, setValidationError] = useState("");
 
@@ -39,6 +40,11 @@ export default function App() {
 
     if (currentAction.needsHost && !host.trim()) {
       setValidationError("Un host/service est requis.");
+      return;
+    }
+
+    if (currentAction.needsUsername && !username.trim()) {
+      setValidationError("Un user est requis.");
       return;
     }
 
@@ -68,6 +74,7 @@ export default function App() {
         target,
         selectedPortRange,
         customPortRange,
+        username,
         wordlist
       )
     });
@@ -118,6 +125,7 @@ export default function App() {
                 host={host}
                 selectedPortRange={selectedPortRange}
                 target={target}
+                username={username}
                 validationError={validationError}
                 wordlist={wordlist}
                 wordlists={wordlists}
@@ -125,6 +133,7 @@ export default function App() {
                 onHostChange={setHost}
                 onSelectedPortRangeChange={setSelectedPortRange}
                 onTargetChange={setTarget}
+                onUsernameChange={setUsername}
                 onWordlistChange={setWordlist}
               />
 

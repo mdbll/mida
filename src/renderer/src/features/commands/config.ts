@@ -44,12 +44,13 @@ export const ACTIONS: ActionConfig[] = [
   {
     id: "hydra",
     label: "Hydra",
-    description: "Executer une attaque dictionnaire Hydra avec l'utilisateur fixe admin.",
+    description: "Executer une attaque dictionnaire Hydra avec un utilisateur et une wordlist choisis.",
     category: "bruteforce",
     needsHost: true,
     needsTarget: true,
+    needsUsername: true,
     needsWordlist: true,
-    helper: "Renseigne le host/service, la wordlist et l'IP cible."
+    helper: "Renseigne le user, le host/service, la wordlist et l'IP cible."
   }
 ];
 

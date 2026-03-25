@@ -8,6 +8,7 @@ type CommandFormProps = {
   host: string;
   selectedPortRange: string;
   target: string;
+  username: string;
   validationError: string;
   wordlist: string;
   wordlists: WordlistEntry[];
@@ -15,6 +16,7 @@ type CommandFormProps = {
   onHostChange: (value: string) => void;
   onSelectedPortRangeChange: (value: string) => void;
   onTargetChange: (value: string) => void;
+  onUsernameChange: (value: string) => void;
   onWordlistChange: (value: string) => void;
 };
 
@@ -24,14 +26,15 @@ export function CommandForm({
   host,
   selectedPortRange,
   target,
+  username,
   validationError,
   wordlist,
   wordlists,
   onCustomPortRangeChange,
   onHostChange,
   onSelectedPortRangeChange,
-  onTargetChange
-  ,
+  onTargetChange,
+  onUsernameChange,
   onWordlistChange
 }: CommandFormProps) {
   return (
@@ -57,6 +60,20 @@ export function CommandForm({
               value={host}
               onChange={(event) => onHostChange(event.target.value)}
               placeholder="ssh"
+              className="mt-2 w-full rounded-md border border-white/10 bg-zinc-950 px-2.5 py-2 text-[11px] text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-amber-300/40"
+            />
+          </label>
+        ) : null}
+
+        {action.needsUsername ? (
+          <label className="rounded-lg bg-zinc-900/70 p-3">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+              User
+            </span>
+            <input
+              value={username}
+              onChange={(event) => onUsernameChange(event.target.value)}
+              placeholder="admin"
               className="mt-2 w-full rounded-md border border-white/10 bg-zinc-950 px-2.5 py-2 text-[11px] text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-amber-300/40"
             />
           </label>

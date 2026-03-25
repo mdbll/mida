@@ -84,6 +84,7 @@ export function buildPayload(
   target: string,
   selectedPortRange: string,
   customPortRange: string,
+  username: string,
   wordlist: string
 ): CommandPayload {
   if (action.id === "ipAddress") {
@@ -96,6 +97,10 @@ export function buildPayload(
 
   if (action.needsHost) {
     payload.host = host.trim();
+  }
+
+  if (action.needsUsername) {
+    payload.username = username.trim();
   }
 
   if (action.needsPortRange) {

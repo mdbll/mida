@@ -8,6 +8,7 @@ export type ActionConfig = {
   needsHost?: boolean;
   needsTarget?: boolean;
   needsPortRange?: boolean;
+  needsUsername?: boolean;
   needsWordlist?: boolean;
   helper: string;
 };
