@@ -3,9 +3,15 @@
 interface Window {
   mida: {
     platform: string;
-    runCommand: (actionId: "ipAddress") => Promise<{
+    runCommand: (request: {
+      actionId: "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
+      payload?: {
+        target?: string;
+        portRange?: string;
+      };
+    }) => Promise<{
       ok: boolean;
-      actionId: "ipAddress";
+      actionId: "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
       command: string;
       stdout: string;
       stderr: string;

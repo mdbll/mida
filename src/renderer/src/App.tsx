@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-type ActionId = "ipAddress";
+type ActionId = "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
 type TabId = "terminal" | "summary";
+
+type CommandPayload = {
+  target?: string;
+  portRange?: string;
+};
 
 type CommandResult = {
   ok: boolean;
@@ -10,6 +15,16 @@ type CommandResult = {
   command: string;
   stdout: string;
   stderr: string;
+};
+
+type ActionConfig = {
+  id: ActionId;
+  label: string;
+  description: string;
+  category: "system" | "scan";
+  needsTarget?: boolean;
+  needsPortRange?: boolean;
+  helper: string;
 };
 
 type InterfaceSummary = {
@@ -20,59 +35,200 @@ type InterfaceSummary = {
   ipv6: string[];
 };
 
-const ACTIONS: Array<{ id: ActionId; label: string; description: string }> = [
+type NmapPort = {
+  port: string;
+  state: string;
+  service: string;
+  version: string;
+};
+
+type NmapSummary = {
+  target: string | null;
+  hostState: string | null;
+  latency: string | null;
+  openPorts: NmapPort[];
+  hostnames: string[];
+  interestingFacts: string[];
+  rawHostsUp: string | null;
+};
+
+const ACTIONS: ActionConfig[] = [
   {
     id: "ipAddress",
     label: "Reseau",
-    description: "Inspecter les interfaces et les adresses IP"
+    description: "Inspecter les interfaces locales et les adresses IP de la machine.",
+    category: "system",
+    helper: "Commande locale utile pour voir les interfaces, IPv4, IPv6 et l'etat reseau."
+  },
+  {
+    id: "nmapDiscovery",
+    label: "Decouverte",
+    description: "Verifier si une cible ou un sous-reseau repond sans lancer un scan de ports.",
+    category: "scan",
+    needsTarget: true,
+    helper: "Exemple: 192.168.1.10 ou 192.168.1.0/24"
+  },
+  {
+    id: "nmapQuick",
+    label: "Scan rapide",
+    description: "Scanner rapidement les ports frequents pour identifier les services exposes.",
+    category: "scan",
+    needsTarget: true,
+    helper: "Pratique pour un premier passage rapide sur une machine cible."
+  },
+  {
+    id: "nmapPorts",
+    label: "Ports cibles",
+    description: "Scanner une plage de ports precise avec detection de service.",
+    category: "scan",
+    needsTarget: true,
+    needsPortRange: true,
+    helper: "Choisis une plage predefinie ou saisis une plage personnalisee."
   }
 ];
 
+const PORT_RANGE_OPTIONS = [
+  { label: "Top 1000", value: "1-1000" },
+  { label: "Web", value: "80-443" },
+  { label: "Admin", value: "20-25" },
+  { label: "Services classiques", value: "21-3306" },
+  { label: "Personnalisee", value: "custom" }
+] as const;
+
 function parseIpAddressOutput(output: string): InterfaceSummary[] {
-  const sections = output
+  return output
     .split(/\n(?=\d+:\s)/)
     .map((section) => section.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((section) => {
+      const lines = section.split("\n").map((line) => line.trim());
+      const header = lines[0] ?? "";
+      const headerMatch = header.match(/^\d+:\s+([^:]+):\s+<([^>]*)>/);
+      const stateMatch = header.match(/\bstate\s+([A-Z]+)/);
+      const macMatch = section.match(/\blink\/\w+\s+([0-9a-f:]{17})/i);
+      const ipv4 = [...section.matchAll(/\binet\s+(\d+\.\d+\.\d+\.\d+\/\d+)/g)].map(
+        (match) => match[1]
+      );
+      const ipv6 = [...section.matchAll(/\binet6\s+([0-9a-f:]+\/\d+)/gi)].map(
+        (match) => match[1]
+      );
 
-  return sections.map((section) => {
-    const lines = section.split("\n").map((line) => line.trim());
-    const header = lines[0] ?? "";
-    const headerMatch = header.match(/^\d+:\s+([^:]+):\s+<([^>]*)>/);
-    const stateMatch = header.match(/\bstate\s+([A-Z]+)/);
-    const macMatch = section.match(/\blink\/\w+\s+([0-9a-f:]{17})/i);
-    const ipv4 = [...section.matchAll(/\binet\s+(\d+\.\d+\.\d+\.\d+\/\d+)/g)].map(
-      (match) => match[1]
-    );
-    const ipv6 = [...section.matchAll(/\binet6\s+([0-9a-f:]+\/\d+)/gi)].map(
-      (match) => match[1]
-    );
+      return {
+        name: headerMatch?.[1] ?? "unknown",
+        state: stateMatch?.[1] ?? "UNKNOWN",
+        mac: macMatch?.[1] ?? null,
+        ipv4,
+        ipv6
+      };
+    });
+}
 
-    return {
-      name: headerMatch?.[1] ?? "unknown",
-      state: stateMatch?.[1] ?? "UNKNOWN",
-      mac: macMatch?.[1] ?? null,
-      ipv4,
-      ipv6
-    };
-  });
+function parseNmapOutput(output: string): NmapSummary {
+  const targetMatch = output.match(/Nmap scan report for\s+(.+)/);
+  const hostStateMatch = output.match(/Host is (\w+)(?:\s+\(([^)]+)\))?/);
+  const rawHostsUpMatch = output.match(/(\d+)\s+hosts up/);
+  const hostnames = [...output.matchAll(/Nmap scan report for\s+(.+)/g)].map(
+    (match) => match[1].trim()
+  );
+  const openPorts = [...output.matchAll(/^(\d+\/\w+)\s+(\w+)\s+([\w?-]+)\s*(.*)$/gm)].map(
+    (match) => ({
+      port: match[1],
+      state: match[2],
+      service: match[3],
+      version: match[4].trim()
+    })
+  );
+
+  const interestingFacts: string[] = [];
+
+  if (rawHostsUpMatch?.[1]) {
+    interestingFacts.push(`${rawHostsUpMatch[1]} hote(s) actif(s) detecte(s).`);
+  }
+
+  if (openPorts.length > 0) {
+    interestingFacts.push(`${openPorts.length} port(s) ouvert(s) detecte(s).`);
+  } else if (output.includes("All 100 scanned ports")) {
+    interestingFacts.push("Aucun port ouvert parmi les ports scannes.");
+  }
+
+  if (output.includes("Not shown:")) {
+    interestingFacts.push("Des ports supplementaires ont ete filtres ou fermes.");
+  }
+
+  if (output.includes("MAC Address:")) {
+    interestingFacts.push("Une adresse MAC a ete identifiee sur la cible.");
+  }
+
+  return {
+    target: targetMatch?.[1]?.trim() ?? null,
+    hostState: hostStateMatch?.[1]?.trim() ?? null,
+    latency: hostStateMatch?.[2]?.trim() ?? null,
+    openPorts,
+    hostnames,
+    interestingFacts,
+    rawHostsUp: rawHostsUpMatch?.[1] ?? null
+  };
+}
+
+function buildPayload(
+  action: ActionConfig,
+  target: string,
+  selectedPortRange: string,
+  customPortRange: string
+): CommandPayload {
+  if (action.id === "ipAddress") {
+    return {};
+  }
+
+  const payload: CommandPayload = {
+    target: target.trim()
+  };
+
+  if (action.needsPortRange) {
+    payload.portRange =
+      selectedPortRange === "custom" ? customPortRange.trim() : selectedPortRange;
+  }
+
+  return payload;
 }
 
 export default function App() {
   const [selectedAction, setSelectedAction] = useState<ActionId>("ipAddress");
   const [activeAction, setActiveAction] = useState<ActionId>("ipAddress");
   const [activeTab, setActiveTab] = useState<TabId>("terminal");
+  const [target, setTarget] = useState("192.168.1.1");
+  const [selectedPortRange, setSelectedPortRange] = useState<string>("1-1000");
+  const [customPortRange, setCustomPortRange] = useState("1-65535");
+  const [validationError, setValidationError] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<CommandResult | null>(null);
 
-  async function handleRun(actionId: ActionId) {
+  const currentAction = ACTIONS.find((action) => action.id === selectedAction)!;
+
+  async function handleRun() {
+    if (currentAction.needsTarget && !target.trim()) {
+      setValidationError("Une cible IP, CIDR ou hostname est requise.");
+      return;
+    }
+
+    if (
+      currentAction.needsPortRange &&
+      selectedPortRange === "custom" &&
+      !customPortRange.trim()
+    ) {
+      setValidationError("Une plage de ports personnalisee est requise.");
+      return;
+    }
+
+    setValidationError("");
     setIsRunning(true);
-    setActiveAction(actionId);
+    setActiveAction(selectedAction);
 
     try {
       if (!window.mida?.runCommand) {
         setResult({
           ok: false,
-          actionId,
+          actionId: selectedAction,
           command: "preload unavailable",
           stdout: "",
           stderr: "L'API preload Electron n'est pas disponible."
@@ -80,18 +236,38 @@ export default function App() {
         return;
       }
 
-      const nextResult = await window.mida.runCommand(actionId);
+      const nextResult = await window.mida.runCommand({
+        actionId: selectedAction,
+        payload: buildPayload(
+          currentAction,
+          target,
+          selectedPortRange,
+          customPortRange
+        )
+      });
+
       setResult(nextResult);
     } finally {
       setIsRunning(false);
     }
   }
 
-  const summary = useMemo(
-    () => parseIpAddressOutput(result?.stdout ?? ""),
-    [result?.stdout]
+  const networkSummary = useMemo(
+    () => parseIpAddressOutput(result?.actionId === "ipAddress" ? result.stdout : ""),
+    [result]
   );
-  const currentAction = ACTIONS.find((action) => action.id === selectedAction);
+
+  const nmapSummary = useMemo(
+    () =>
+      parseNmapOutput(
+        result && result.actionId !== "ipAddress" ? result.stdout : ""
+      ),
+    [result]
+  );
+
+  const activeResultDescription = ACTIONS.find(
+    (action) => action.id === activeAction
+  )?.description;
 
   const terminalOutput = useMemo(() => {
     if (!result) {
@@ -116,14 +292,12 @@ export default function App() {
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[220px_1fr]">
         <aside className="border-b border-white/10 bg-zinc-950/90 px-2.5 py-4 lg:border-b-0 lg:border-r">
           <div className="mb-5 px-1.5">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Mida
-            </p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Mida</p>
             <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-white">
               Kali Commands
             </h1>
             <p className="mt-1.5 text-[11px] leading-5 text-zinc-400">
-              Lance des commandes utiles avec une interface plus lisible.
+              Reseau local, scans Nmap et synthese exploitable.
             </p>
           </div>
 
@@ -153,12 +327,15 @@ export default function App() {
         <section className="flex min-h-screen flex-col">
           <header className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[11px] text-zinc-500">Action courante</p>
+              <p className="text-[11px] text-zinc-500">Action selectionnee</p>
               <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">
-                {currentAction?.label}
+                {currentAction.label}
               </h2>
-              <p className="mt-1.5 max-w-xl text-[11px] leading-5 text-zinc-400">
-                {currentAction?.description}
+              <p className="mt-1.5 max-w-2xl text-[11px] leading-5 text-zinc-400">
+                {currentAction.description}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-zinc-500">
+                {currentAction.helper}
               </p>
             </div>
 
@@ -166,17 +343,108 @@ export default function App() {
               <div className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-400">
                 {window.mida?.platform ?? "unknown"}
               </div>
-              <Button
-                onClick={() => void handleRun(selectedAction)}
-                disabled={isRunning}
-              >
+              <Button onClick={() => void handleRun()} disabled={isRunning}>
                 {isRunning ? "Execution..." : "Executer"}
               </Button>
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col px-4 py-4 sm:px-5">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="flex flex-1 flex-col gap-4 px-4 py-4 sm:px-5">
+            <section className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-lg bg-zinc-900/70 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                    Type
+                  </p>
+                  <p className="mt-1.5 text-[11px] text-zinc-200">
+                    {currentAction.category === "scan" ? "Nmap" : "Systeme"}
+                  </p>
+                </div>
+
+                {currentAction.needsTarget ? (
+                  <label className="rounded-lg bg-zinc-900/70 p-3">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Cible
+                    </span>
+                    <input
+                      value={target}
+                      onChange={(event) => setTarget(event.target.value)}
+                      placeholder="192.168.1.1 ou 192.168.1.0/24"
+                      className="mt-2 w-full rounded-md border border-white/10 bg-zinc-950 px-2.5 py-2 text-[11px] text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-amber-300/40"
+                    />
+                  </label>
+                ) : (
+                  <div className="rounded-lg bg-zinc-900/70 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Cible
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-zinc-500">Non requise</p>
+                  </div>
+                )}
+
+                {currentAction.needsPortRange ? (
+                  <label className="rounded-lg bg-zinc-900/70 p-3">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Plage de ports
+                    </span>
+                    <select
+                      value={selectedPortRange}
+                      onChange={(event) => setSelectedPortRange(event.target.value)}
+                      className="mt-2 w-full rounded-md border border-white/10 bg-zinc-950 px-2.5 py-2 text-[11px] text-zinc-100 outline-none transition focus:border-amber-300/40"
+                    >
+                      {PORT_RANGE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <div className="rounded-lg bg-zinc-900/70 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Parametre
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-zinc-500">
+                      Aucun parametre supplementaire
+                    </p>
+                  </div>
+                )}
+
+                {currentAction.needsPortRange ? (
+                  <label className="rounded-lg bg-zinc-900/70 p-3">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Valeur effective
+                    </span>
+                    <input
+                      value={
+                        selectedPortRange === "custom"
+                          ? customPortRange
+                          : selectedPortRange
+                      }
+                      onChange={(event) => setCustomPortRange(event.target.value)}
+                      disabled={selectedPortRange !== "custom"}
+                      placeholder="1-65535"
+                      className="mt-2 w-full rounded-md border border-white/10 bg-zinc-950 px-2.5 py-2 text-[11px] text-zinc-100 outline-none transition placeholder:text-zinc-500 disabled:opacity-50 focus:border-amber-300/40"
+                    />
+                  </label>
+                ) : (
+                  <div className="rounded-lg bg-zinc-900/70 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Execution
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-zinc-500">
+                      Clique sur Executer pour lancer l'action.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {validationError ? (
+                <p className="mt-3 text-[11px] text-amber-300">{validationError}</p>
+              ) : null}
+            </section>
+
+            <div className="mb-1 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab("terminal")}
@@ -212,10 +480,10 @@ export default function App() {
                   {terminalOutput}
                 </pre>
               </div>
-            ) : (
+            ) : activeAction === "ipAddress" ? (
               <div className="grid gap-3">
-                {summary.length > 0 ? (
-                  summary.map((item) => (
+                {networkSummary.length > 0 ? (
+                  networkSummary.map((item) => (
                     <article
                       key={item.name}
                       className="rounded-xl border border-white/10 bg-white/5 p-3.5"
@@ -283,6 +551,121 @@ export default function App() {
                     Aucune information a afficher pour le moment.
                   </div>
                 )}
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <article className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Cible
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-zinc-100">
+                      {nmapSummary.target ?? "N/A"}
+                    </p>
+                  </article>
+
+                  <article className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Etat
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-zinc-100">
+                      {nmapSummary.hostState ?? "Inconnu"}
+                    </p>
+                  </article>
+
+                  <article className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Latence
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-zinc-100">
+                      {nmapSummary.latency ?? "N/A"}
+                    </p>
+                  </article>
+
+                  <article className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                      Ports ouverts
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-zinc-100">
+                      {nmapSummary.openPorts.length}
+                    </p>
+                  </article>
+                </section>
+
+                <section className="rounded-xl border border-white/10 bg-white/5 p-3.5">
+                  <h3 className="text-sm font-medium text-white">Points utiles</h3>
+                  <div className="mt-3 grid gap-2">
+                    {nmapSummary.interestingFacts.length > 0 ? (
+                      nmapSummary.interestingFacts.map((fact) => (
+                        <div
+                          key={fact}
+                          className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-300"
+                        >
+                          {fact}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-500">
+                        Aucune synthese disponible pour le moment.
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <section className="grid gap-3 xl:grid-cols-[1.2fr_0.8fr]">
+                  <article className="rounded-xl border border-white/10 bg-white/5 p-3.5">
+                    <h3 className="text-sm font-medium text-white">Ports et services</h3>
+                    <div className="mt-3 space-y-2">
+                      {nmapSummary.openPorts.length > 0 ? (
+                        nmapSummary.openPorts.map((port) => (
+                          <div
+                            key={`${port.port}-${port.service}`}
+                            className="grid gap-2 rounded-lg bg-zinc-900/80 px-3 py-2 md:grid-cols-[100px_90px_120px_1fr]"
+                          >
+                            <p className="font-mono text-[11px] text-zinc-100">{port.port}</p>
+                            <p className="text-[11px] text-zinc-300">{port.state}</p>
+                            <p className="text-[11px] text-zinc-300">{port.service}</p>
+                            <p className="text-[11px] text-zinc-500">
+                              {port.version || "Version non detectee"}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-500">
+                          Aucun port ouvert detecte ou aucune sortie encore disponible.
+                        </div>
+                      )}
+                    </div>
+                  </article>
+
+                  <article className="rounded-xl border border-white/10 bg-white/5 p-3.5">
+                    <h3 className="text-sm font-medium text-white">Hotes vus</h3>
+                    <div className="mt-3 space-y-2">
+                      {nmapSummary.hostnames.length > 0 ? (
+                        nmapSummary.hostnames.map((host) => (
+                          <div
+                            key={host}
+                            className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-300"
+                          >
+                            {host}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-500">
+                          Aucun hote liste.
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                </section>
+
+                {result && result.actionId === activeAction && activeResultDescription ? (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-[11px] text-zinc-400">
+                    Resume genere a partir de la sortie de <span className="text-zinc-200">{result.command}</span>.
+                    {` `}
+                    {activeResultDescription}
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
