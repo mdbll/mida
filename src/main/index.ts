@@ -1,5 +1,53 @@
-import { app, BrowserWindow } from "electron";
+import { execFile } from "node:child_process";
 import { join } from "node:path";
+import { promisify } from "node:util";
+import { app, BrowserWindow, ipcMain } from "electron";
+
+const execFileAsync = promisify(execFile);
+
+const COMMANDS = {
+  ipAddress: {
+    label: "IP Address",
+    command: "ip",
+    args: ["a"]
+  }
+} as const;
+
+ipcMain.handle("command:run", async (_event, actionId: keyof typeof COMMANDS) => {
+  const action = COMMANDS[actionId];
+
+  if (!action) {
+    throw new Error("Unknown action");
+  }
+
+  try {
+    const { stdout, stderr } = await execFileAsync(action.command, action.args, {
+      timeout: 15_000,
+      maxBuffer: 1024 * 1024
+    });
+
+    return {
+      ok: true,
+      actionId,
+      command: `${action.command} ${action.args.join(" ")}`,
+      stdout,
+      stderr
+    };
+  } catch (error) {
+    const details = error as NodeJS.ErrnoException & {
+      stdout?: string;
+      stderr?: string;
+    };
+
+    return {
+      ok: false,
+      actionId,
+      command: `${action.command} ${action.args.join(" ")}`,
+      stdout: details.stdout ?? "",
+      stderr: details.stderr || details.message || "Command failed"
+    };
+  }
+});
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -10,7 +58,7 @@ function createWindow(): void {
     titleBarStyle: "hiddenInset",
     backgroundColor: "#09090b",
     webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
+      preload: join(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false
     }

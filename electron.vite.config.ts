@@ -13,7 +13,12 @@ export default defineConfig({
   preload: {
     plugins: [externalizeDepsPlugin()],
     build: {
-      target: "node22"
+      target: "node22",
+      rollupOptions: {
+        output: {
+          format: "cjs"
+        }
+      }
     }
   },
   renderer: {
