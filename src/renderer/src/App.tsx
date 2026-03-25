@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-type ActionId = "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
+type ActionId =
+  | "ipAddress"
+  | "nmapDiscovery"
+  | "nmapQuick"
+  | "nmapServices"
+  | "nmapPorts";
 type TabId = "terminal" | "summary";
 
 type CommandPayload = {
@@ -82,6 +87,14 @@ const ACTIONS: ActionConfig[] = [
     category: "scan",
     needsTarget: true,
     helper: "Pratique pour un premier passage rapide sur une machine cible."
+  },
+  {
+    id: "nmapServices",
+    label: "Services ouverts",
+    description: "Voir directement les ports ouverts et les services detectes sur une IP.",
+    category: "scan",
+    needsTarget: true,
+    helper: "Ideal pour identifier les services exposes sans regler une plage manuellement."
   },
   {
     id: "nmapPorts",

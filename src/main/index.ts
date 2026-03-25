@@ -2,7 +2,12 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { app, BrowserWindow, ipcMain } from "electron";
 
-type ActionId = "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
+type ActionId =
+  | "ipAddress"
+  | "nmapDiscovery"
+  | "nmapQuick"
+  | "nmapServices"
+  | "nmapPorts";
 
 type CommandPayload = {
   target?: string;
@@ -55,6 +60,11 @@ function resolveCommand(actionId: ActionId, payload: CommandPayload) {
       return {
         command: "nmap",
         args: ["--stats-every", "2s", "-T4", "-F", target]
+      };
+    case "nmapServices":
+      return {
+        command: "nmap",
+        args: ["--stats-every", "2s", "-sV", "-Pn", target]
       };
     case "nmapPorts": {
       const portRange = payload.portRange?.trim();

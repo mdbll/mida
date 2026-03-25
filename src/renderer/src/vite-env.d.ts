@@ -5,14 +5,24 @@ interface Window {
     platform: string;
     runCommand: (request: {
       runId: string;
-      actionId: "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
+      actionId:
+        | "ipAddress"
+        | "nmapDiscovery"
+        | "nmapQuick"
+        | "nmapServices"
+        | "nmapPorts";
       payload?: {
         target?: string;
         portRange?: string;
       };
     }) => Promise<{
       ok: boolean;
-      actionId: "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
+      actionId:
+        | "ipAddress"
+        | "nmapDiscovery"
+        | "nmapQuick"
+        | "nmapServices"
+        | "nmapPorts";
       command: string;
       stdout: string;
       stderr: string;
@@ -24,7 +34,12 @@ interface Window {
       chunk?: string;
       result?: {
         ok: boolean;
-        actionId: "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
+        actionId:
+          | "ipAddress"
+          | "nmapDiscovery"
+          | "nmapQuick"
+          | "nmapServices"
+          | "nmapPorts";
         command: string;
         stdout: string;
         stderr: string;
