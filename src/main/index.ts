@@ -1,15 +1,18 @@
-import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import { join } from "node:path";
-import { promisify } from "node:util";
 import { app, BrowserWindow, ipcMain } from "electron";
-
-const execFileAsync = promisify(execFile);
 
 type ActionId = "ipAddress" | "nmapDiscovery" | "nmapQuick" | "nmapPorts";
 
 type CommandPayload = {
   target?: string;
   portRange?: string;
+};
+
+type CommandRequest = {
+  runId: string;
+  actionId: ActionId;
+  payload: CommandPayload;
 };
 
 const STATIC_COMMANDS = {
@@ -46,12 +49,12 @@ function resolveCommand(actionId: ActionId, payload: CommandPayload) {
     case "nmapDiscovery":
       return {
         command: "nmap",
-        args: ["-sn", target]
+        args: ["--stats-every", "2s", "-sn", target]
       };
     case "nmapQuick":
       return {
         command: "nmap",
-        args: ["-T4", "-F", target]
+        args: ["--stats-every", "2s", "-T4", "-F", target]
       };
     case "nmapPorts": {
       const portRange = payload.portRange?.trim();
@@ -66,7 +69,7 @@ function resolveCommand(actionId: ActionId, payload: CommandPayload) {
 
       return {
         command: "nmap",
-        args: ["-sV", "-Pn", "-p", portRange, target]
+        args: ["--stats-every", "2s", "-sV", "-Pn", "-p", portRange, target]
       };
     }
     default:
@@ -74,39 +77,106 @@ function resolveCommand(actionId: ActionId, payload: CommandPayload) {
   }
 }
 
+function buildCommandLine(command: string, args: readonly string[]): string {
+  return [command, ...args].join(" ");
+}
+
 ipcMain.handle(
   "command:run",
-  async (_event, request: { actionId: ActionId; payload: CommandPayload }) => {
-    const { actionId, payload } = request;
+  async (event, request: CommandRequest) => {
+    const { runId, actionId, payload } = request;
     const action = resolveCommand(actionId, payload);
+    const commandLine = buildCommandLine(action.command, action.args);
 
-    try {
-      const { stdout, stderr } = await execFileAsync(action.command, action.args, {
-        timeout: 60_000,
-        maxBuffer: 2 * 1024 * 1024
+    event.sender.send("command:event", {
+      runId,
+      type: "start",
+      command: commandLine
+    });
+
+    return await new Promise<{
+      ok: boolean;
+      actionId: ActionId;
+      command: string;
+      stdout: string;
+      stderr: string;
+    }>((resolve) => {
+      const child = spawn(action.command, action.args, {
+        stdio: ["ignore", "pipe", "pipe"]
       });
 
-      return {
-        ok: true,
-        actionId,
-        command: `${action.command} ${action.args.join(" ")}`,
-        stdout,
-        stderr
-      };
-    } catch (error) {
-      const details = error as NodeJS.ErrnoException & {
-        stdout?: string;
-        stderr?: string;
+      let stdout = "";
+      let stderr = "";
+      let settled = false;
+
+      const finish = (result: {
+        ok: boolean;
+        actionId: ActionId;
+        command: string;
+        stdout: string;
+        stderr: string;
+      }) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        event.sender.send("command:event", {
+          runId,
+          type: "complete",
+          result
+        });
+        resolve(result);
       };
 
-      return {
-        ok: false,
-        actionId,
-        command: `${action.command} ${action.args.join(" ")}`,
-        stdout: details.stdout ?? "",
-        stderr: details.stderr || details.message || "Command failed"
-      };
-    }
+      child.stdout.on("data", (chunk: Buffer) => {
+        const text = chunk.toString();
+        stdout += text;
+        event.sender.send("command:event", {
+          runId,
+          type: "stdout",
+          chunk: text
+        });
+      });
+
+      child.stderr.on("data", (chunk: Buffer) => {
+        const text = chunk.toString();
+        stderr += text;
+        event.sender.send("command:event", {
+          runId,
+          type: "stderr",
+          chunk: text
+        });
+      });
+
+      child.on("error", (error) => {
+        const message = error.message || "Command failed";
+        stderr += stderr ? `\n${message}` : message;
+        event.sender.send("command:event", {
+          runId,
+          type: "stderr",
+          chunk: `${message}\n`
+        });
+
+        finish({
+          ok: false,
+          actionId,
+          command: commandLine,
+          stdout,
+          stderr
+        });
+      });
+
+      child.on("close", (code) => {
+        finish({
+          ok: code === 0,
+          actionId,
+          command: commandLine,
+          stdout,
+          stderr
+        });
+      });
+    });
   }
 );
 
