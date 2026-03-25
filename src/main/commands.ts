@@ -20,6 +20,14 @@ function isSafePortRange(value: string): boolean {
   return /^\d{1,5}(-\d{1,5})?$/.test(value);
 }
 
+function isSafeHydraHost(value: string): boolean {
+  return /^[a-zA-Z][a-zA-Z0-9+.-]*$/.test(value);
+}
+
+function isSafeWordlist(value: string): boolean {
+  return /^[a-zA-Z0-9._/-]+$/.test(value);
+}
+
 export function resolveCommand(
   actionId: ActionId,
   payload: CommandPayload
@@ -54,6 +62,31 @@ export function resolveCommand(
         command: "nmap",
         args: ["--stats-every", "2s", "-sV", "-Pn", target]
       };
+    case "hydra": {
+      const host = payload.host?.trim();
+      const wordlist = payload.wordlist?.trim();
+
+      if (!host) {
+        throw new Error("Host is required");
+      }
+
+      if (!isSafeHydraHost(host)) {
+        throw new Error("Invalid host");
+      }
+
+      if (!wordlist) {
+        throw new Error("Wordlist is required");
+      }
+
+      if (!isSafeWordlist(wordlist)) {
+        throw new Error("Invalid wordlist");
+      }
+
+      return {
+        command: "hydra",
+        args: ["-l", "admin", "-P", wordlist, `${host}://${target}`]
+      };
+    }
     case "nmapPorts": {
       const portRange = payload.portRange?.trim();
 

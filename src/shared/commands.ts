@@ -3,13 +3,16 @@ export type ActionId =
   | "nmapDiscovery"
   | "nmapQuick"
   | "nmapServices"
+  | "hydra"
   | "nmapPorts";
 
 export type TabId = "terminal" | "summary";
 
 export type CommandPayload = {
+  host?: string;
   target?: string;
   portRange?: string;
+  wordlist?: string;
 };
 
 export type CommandRequest = {
@@ -32,4 +35,9 @@ export type CommandEvent = {
   command?: string;
   chunk?: string;
   result?: CommandResult;
+};
+
+export type WordlistEntry = {
+  label: string;
+  value: string;
 };

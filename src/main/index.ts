@@ -1,8 +1,17 @@
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { app, BrowserWindow, ipcMain } from "electron";
-import type { CommandRequest, CommandResult } from "../shared/commands";
+import type {
+  CommandRequest,
+  CommandResult,
+  WordlistEntry
+} from "../shared/commands";
 import { buildCommandLine, resolveCommand } from "./commands";
+import { ensureWordlistDirectory, listWordlists } from "./wordlists";
+
+ipcMain.handle("wordlists:list", async (): Promise<WordlistEntry[]> => {
+  return await listWordlists();
+});
 
 ipcMain.handle(
   "command:run",
@@ -116,6 +125,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  void ensureWordlistDirectory();
   createWindow();
 
   app.on("activate", () => {

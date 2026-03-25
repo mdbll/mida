@@ -40,6 +40,16 @@ export const ACTIONS: ActionConfig[] = [
     needsTarget: true,
     needsPortRange: true,
     helper: "Choisis une plage predefinie ou saisis une plage personnalisee."
+  },
+  {
+    id: "hydra",
+    label: "Hydra",
+    description: "Executer une attaque dictionnaire Hydra avec l'utilisateur fixe admin.",
+    category: "bruteforce",
+    needsHost: true,
+    needsTarget: true,
+    needsWordlist: true,
+    helper: "Renseigne le host/service, la wordlist et l'IP cible."
   }
 ];
 

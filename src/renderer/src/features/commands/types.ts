@@ -4,9 +4,11 @@ export type ActionConfig = {
   id: ActionId;
   label: string;
   description: string;
-  category: "system" | "scan";
+  category: "system" | "scan" | "bruteforce";
+  needsHost?: boolean;
   needsTarget?: boolean;
   needsPortRange?: boolean;
+  needsWordlist?: boolean;
   helper: string;
 };
 
@@ -31,5 +33,18 @@ export type NmapSummary = {
   latency: string | null;
   openPorts: NmapPort[];
   hostnames: string[];
+  interestingFacts: string[];
+};
+
+export type HydraSummary = {
+  target: string | null;
+  service: string | null;
+  attemptsInfo: string | null;
+  credentials: Array<{
+    host: string;
+    login: string;
+    password: string;
+    service: string;
+  }>;
   interestingFacts: string[];
 };

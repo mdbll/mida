@@ -1,5 +1,10 @@
 import type { CommandPayload, CommandResult } from "../../../../shared/commands";
-import type { ActionConfig, InterfaceSummary, NmapSummary } from "./types";
+import type {
+  ActionConfig,
+  HydraSummary,
+  InterfaceSummary,
+  NmapSummary
+} from "./types";
 
 export function parseIpAddressOutput(output: string): InterfaceSummary[] {
   return output
@@ -75,9 +80,11 @@ export function parseNmapOutput(output: string): NmapSummary {
 
 export function buildPayload(
   action: ActionConfig,
+  host: string,
   target: string,
   selectedPortRange: string,
-  customPortRange: string
+  customPortRange: string,
+  wordlist: string
 ): CommandPayload {
   if (action.id === "ipAddress") {
     return {};
@@ -87,12 +94,58 @@ export function buildPayload(
     target: target.trim()
   };
 
+  if (action.needsHost) {
+    payload.host = host.trim();
+  }
+
   if (action.needsPortRange) {
     payload.portRange =
       selectedPortRange === "custom" ? customPortRange.trim() : selectedPortRange;
   }
 
+  if (action.needsWordlist) {
+    payload.wordlist = wordlist.trim();
+  }
+
   return payload;
+}
+
+export function parseHydraOutput(output: string): HydraSummary {
+  const credentials = [
+    ...output.matchAll(
+      /\[(\d+)\]\[(.+?)\]\s+host:\s+(.+?)\s+login:\s+(.+?)\s+password:\s+(.+)/g
+    )
+  ].map((match) => ({
+    service: match[2].trim(),
+    host: match[3].trim(),
+    login: match[4].trim(),
+    password: match[5].trim()
+  }));
+
+  const service = credentials[0]?.service ?? output.match(/\[\d+\]\[(.+?)\]/)?.[1] ?? null;
+  const target = credentials[0]?.host ?? output.match(/host:\s+([^\s]+)/)?.[1] ?? null;
+  const attemptsInfo = output.match(/\[STATUS\]\s+(.+)/)?.[1]?.trim() ?? null;
+  const interestingFacts: string[] = [];
+
+  if (credentials.length > 0) {
+    interestingFacts.push(`${credentials.length} credential(s) valide(s) trouve(s).`);
+  }
+
+  if (attemptsInfo) {
+    interestingFacts.push(attemptsInfo);
+  }
+
+  if (output.includes("[ERROR]")) {
+    interestingFacts.push("Hydra a retourne au moins une erreur.");
+  }
+
+  return {
+    target,
+    service,
+    attemptsInfo,
+    credentials,
+    interestingFacts
+  };
 }
 
 export function getTerminalOutput(result: CommandResult | null): string {

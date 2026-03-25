@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type {
   CommandEvent,
   CommandRequest,
-  CommandResult
+  CommandResult,
+  WordlistEntry
 } from "../../../../shared/commands";
 
 export function useCommandRunner() {
@@ -100,4 +101,32 @@ export function useCommandRunner() {
     run,
     terminalOutput
   };
+}
+
+export function useWordlists() {
+  const [wordlists, setWordlists] = useState<WordlistEntry[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadWordlists() {
+      if (!window.mida?.listWordlists) {
+        return;
+      }
+
+      const nextWordlists = await window.mida.listWordlists();
+
+      if (active) {
+        setWordlists(nextWordlists);
+      }
+    }
+
+    void loadWordlists();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return { wordlists };
 }
