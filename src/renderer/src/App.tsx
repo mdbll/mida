@@ -116,16 +116,16 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="grid min-h-screen grid-cols-[280px_1fr]">
-        <aside className="border-r border-white/10 bg-zinc-950/90 px-4 py-6">
-          <div className="mb-8 px-2">
+      <div className="grid min-h-screen grid-cols-[240px_1fr]">
+        <aside className="border-r border-white/10 bg-zinc-950/90 px-3 py-5">
+          <div className="mb-6 px-2">
             <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
               Mida
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+            <h1 className="mt-2 text-xl font-semibold tracking-tight text-white">
               Kali Commands
             </h1>
-            <p className="mt-3 text-sm leading-6 text-zinc-400">
+            <p className="mt-2 text-xs leading-5 text-zinc-400">
               Lance des commandes utiles avec une interface plus lisible.
             </p>
           </div>
@@ -140,19 +140,19 @@ export default function App() {
                   type="button"
                   onClick={() => setSelectedAction(action.id)}
                   className={[
-                    "w-full rounded-2xl border p-4 text-left transition",
+                    "w-full rounded-xl border p-3 text-left transition",
                     isActive
                       ? "border-amber-300/30 bg-amber-300/10"
                       : "border-white/10 bg-white/5 hover:bg-white/8"
                   ].join(" ")}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-white">{action.label}</span>
+                    <span className="text-xs font-medium text-white">{action.label}</span>
                     <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-zinc-400">
                       action
                     </span>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">
+                  <p className="mt-2 text-xs leading-5 text-zinc-400">
                     {action.description}
                   </p>
                 </button>
@@ -162,16 +162,16 @@ export default function App() {
         </aside>
 
         <section className="flex min-h-screen flex-col">
-          <header className="flex items-center justify-between border-b border-white/10 px-8 py-6">
+          <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
             <div>
-              <p className="text-sm text-zinc-500">Action courante</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">
+              <p className="text-xs text-zinc-500">Action courante</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
                 {ACTIONS.find((action) => action.id === activeAction)?.label}
               </h2>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400">
+              <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400">
                 {window.mida?.platform ?? "unknown"}
               </div>
               <Button
@@ -183,13 +183,13 @@ export default function App() {
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col px-8 py-6">
-            <div className="mb-6 flex items-center gap-2">
+          <div className="flex flex-1 flex-col px-6 py-5">
+            <div className="mb-4 flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab("terminal")}
                 className={[
-                  "rounded-xl px-4 py-2 text-sm transition",
+                  "rounded-lg px-3 py-1.5 text-xs transition",
                   activeTab === "terminal"
                     ? "bg-white text-zinc-950"
                     : "bg-white/5 text-zinc-300 hover:bg-white/10"
@@ -201,7 +201,7 @@ export default function App() {
                 type="button"
                 onClick={() => setActiveTab("summary")}
                 className={[
-                  "rounded-xl px-4 py-2 text-sm transition",
+                  "rounded-lg px-3 py-1.5 text-xs transition",
                   activeTab === "summary"
                     ? "bg-white text-zinc-950"
                     : "bg-white/5 text-zinc-300 hover:bg-white/10"
@@ -212,11 +212,11 @@ export default function App() {
             </div>
 
             {activeTab === "terminal" ? (
-              <div className="flex-1 overflow-hidden rounded-3xl border border-white/10 bg-zinc-900">
-                <div className="border-b border-white/10 px-5 py-3 text-sm text-zinc-400">
+              <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
+                <div className="border-b border-white/10 px-4 py-2.5 text-xs text-zinc-400">
                   Terminal classique
                 </div>
-                <pre className="h-full overflow-auto p-5 font-mono text-sm leading-7 text-zinc-200">
+                <pre className="h-full overflow-auto p-4 font-mono text-xs leading-6 text-zinc-200">
                   {terminalOutput}
                 </pre>
               </div>
@@ -226,12 +226,12 @@ export default function App() {
                   summary.map((item) => (
                     <article
                       key={item.name}
-                      className="rounded-3xl border border-white/10 bg-white/5 p-5"
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <h3 className="text-lg font-medium text-white">{item.name}</h3>
-                          <p className="mt-1 text-sm text-zinc-400">
+                          <h3 className="text-base font-medium text-white">{item.name}</h3>
+                          <p className="mt-1 text-xs text-zinc-400">
                             Etat: {item.state}
                           </p>
                         </div>
@@ -240,46 +240,46 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="mt-5 grid gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl bg-zinc-900/80 p-4">
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        <div className="rounded-xl bg-zinc-900/80 p-3">
                           <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
                             MAC
                           </p>
-                          <p className="mt-2 break-all font-mono text-sm text-zinc-200">
+                          <p className="mt-2 break-all font-mono text-xs text-zinc-200">
                             {item.mac ?? "N/A"}
                           </p>
                         </div>
 
-                        <div className="rounded-2xl bg-zinc-900/80 p-4">
+                        <div className="rounded-xl bg-zinc-900/80 p-3">
                           <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
                             IPv4
                           </p>
                           <div className="mt-2 space-y-2">
                             {item.ipv4.length > 0 ? (
                               item.ipv4.map((value) => (
-                                <p key={value} className="font-mono text-sm text-zinc-200">
+                                <p key={value} className="font-mono text-xs text-zinc-200">
                                   {value}
                                 </p>
                               ))
                             ) : (
-                              <p className="font-mono text-sm text-zinc-500">N/A</p>
+                              <p className="font-mono text-xs text-zinc-500">N/A</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="rounded-2xl bg-zinc-900/80 p-4">
+                        <div className="rounded-xl bg-zinc-900/80 p-3">
                           <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
                             IPv6
                           </p>
                           <div className="mt-2 space-y-2">
                             {item.ipv6.length > 0 ? (
                               item.ipv6.map((value) => (
-                                <p key={value} className="font-mono text-sm text-zinc-200">
+                                <p key={value} className="font-mono text-xs text-zinc-200">
                                   {value}
                                 </p>
                               ))
                             ) : (
-                              <p className="font-mono text-sm text-zinc-500">N/A</p>
+                              <p className="font-mono text-xs text-zinc-500">N/A</p>
                             )}
                           </div>
                         </div>
@@ -287,7 +287,7 @@ export default function App() {
                     </article>
                   ))
                 ) : (
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-zinc-400">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-xs text-zinc-400">
                     Aucune information a afficher pour le moment.
                   </div>
                 )}
