@@ -94,6 +94,7 @@ export const HASHCAT_MODE_OPTIONS = [
   { label: "500 - md5crypt", value: "500" },
   { label: "900 - MD4", value: "900" },
   { label: "1000 - NTLM", value: "1000" },
+  { label: "13400 - KeePass", value: "13400" },
   { label: "1400 - SHA256", value: "1400" },
   { label: "1700 - SHA512", value: "1700" },
   { label: "1800 - sha512crypt", value: "1800" },
