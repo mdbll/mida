@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { join } from "node:path";
+import type { FSWatcher } from "node:fs";
 import { app, BrowserWindow, ipcMain } from "electron";
 import type {
   CommandRequest,
@@ -7,7 +8,21 @@ import type {
   WordlistEntry
 } from "../shared/commands";
 import { buildCommandLine, resolveCommand } from "./commands";
-import { ensureWordlistDirectory, listWordlists } from "./wordlists";
+import {
+  ensureWordlistDirectory,
+  listWordlists,
+  watchWordlists
+} from "./wordlists";
+
+let wordlistWatcher: FSWatcher | null = null;
+
+async function broadcastWordlists(): Promise<void> {
+  const wordlists = await listWordlists();
+
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send("wordlists:updated", wordlists);
+  }
+}
 
 ipcMain.handle("wordlists:list", async (): Promise<WordlistEntry[]> => {
   return await listWordlists();
@@ -126,6 +141,11 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   void ensureWordlistDirectory();
+  void watchWordlists(async () => {
+    await broadcastWordlists();
+  }).then((watcher) => {
+    wordlistWatcher = watcher;
+  });
   createWindow();
 
   app.on("activate", () => {
@@ -139,4 +159,9 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  wordlistWatcher?.close();
+  wordlistWatcher = null;
 });

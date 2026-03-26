@@ -1,3 +1,4 @@
+import { watch, type FSWatcher } from "node:fs";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import type { WordlistEntry } from "../shared/commands";
@@ -29,4 +30,22 @@ export async function listWordlists(): Promise<WordlistEntry[]> {
       value: join("wordlists", basename(entry.name))
     }))
     .sort((left, right) => left.label.localeCompare(right.label));
+}
+
+export async function watchWordlists(
+  onChange: () => void | Promise<void>
+): Promise<FSWatcher> {
+  await ensureWordlistDirectory();
+
+  let timeout: NodeJS.Timeout | undefined;
+
+  return watch(WORDLIST_DIR, () => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(() => {
+      void onChange();
+    }, 150);
+  });
 }

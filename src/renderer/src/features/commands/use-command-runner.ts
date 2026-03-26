@@ -123,8 +123,15 @@ export function useWordlists() {
 
     void loadWordlists();
 
+    const unsubscribe = window.mida?.onWordlistsUpdated?.((nextWordlists) => {
+      if (active) {
+        setWordlists(nextWordlists);
+      }
+    });
+
     return () => {
       active = false;
+      unsubscribe?.();
     };
   }, []);
 
