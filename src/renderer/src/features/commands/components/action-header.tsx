@@ -18,7 +18,7 @@ export function ActionHeader({
     <header className="shrink-0 border-b border-white/10 px-4 py-3 sm:px-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[11px] text-zinc-500">Action selectionnee</p>
+          {/* <p className="text-[11px] text-zinc-500">Action sélectionnée</p> */}
           <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">
             {action.label}
           </h2>
@@ -33,7 +33,7 @@ export function ActionHeader({
             {platform}
           </div>
           <Button onClick={onRun} disabled={isRunning}>
-            {isRunning ? "Execution..." : "Executer"}
+            {isRunning ? "Exécution..." : "Exécuter"}
           </Button>
         </div>
       </div>

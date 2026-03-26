@@ -33,7 +33,7 @@ export function ResultTabs({ activeTab, onChange, onClear }: ResultTabsProps) {
               : "bg-white/5 text-zinc-300 hover:bg-white/10"
           ].join(" ")}
         >
-          Resume
+          Résumé
         </button>
       </div>
 

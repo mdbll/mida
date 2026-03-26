@@ -32,6 +32,14 @@ function isSafeWordlist(value: string): boolean {
   return /^[a-zA-Z0-9._/-]+$/.test(value);
 }
 
+function isSafeHashFile(value: string): boolean {
+  return /^[a-zA-Z0-9._/-]+$/.test(value);
+}
+
+function isSafeHashMode(value: string): boolean {
+  return /^\d+$/.test(value);
+}
+
 export function resolveCommand(
   actionId: ActionId,
   payload: CommandPayload
@@ -98,6 +106,40 @@ export function resolveCommand(
       return {
         command: "hydra",
         args: ["-l", username, "-P", wordlist, `${host}://${target}`]
+      };
+    }
+    case "hashcat": {
+      const mode = payload.mode?.trim();
+      const hashFile = payload.hashFile?.trim();
+      const wordlist = payload.wordlist?.trim();
+
+      if (!mode) {
+        throw new Error("Mode is required");
+      }
+
+      if (!isSafeHashMode(mode)) {
+        throw new Error("Invalid mode");
+      }
+
+      if (!hashFile) {
+        throw new Error("Hash file is required");
+      }
+
+      if (!isSafeHashFile(hashFile)) {
+        throw new Error("Invalid hash file");
+      }
+
+      if (!wordlist) {
+        throw new Error("Wordlist is required");
+      }
+
+      if (!isSafeWordlist(wordlist)) {
+        throw new Error("Invalid wordlist");
+      }
+
+      return {
+        command: "hashcat",
+        args: ["-m", mode, "-a", "0", hashFile, wordlist, "--status", "--status-timer", "2"]
       };
     }
     case "nmapPorts": {

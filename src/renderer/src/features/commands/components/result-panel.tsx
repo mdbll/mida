@@ -1,9 +1,11 @@
 import type { ActionId, TabId } from "../../../../../shared/commands";
 import type {
+  HashcatSummary as HashcatSummaryData,
   HydraSummary as HydraSummaryData,
   InterfaceSummary,
   NmapSummary as NmapSummaryData
 } from "../types";
+import { HashcatSummary } from "./hashcat-summary";
 import { HydraSummary } from "./hydra-summary";
 import { NetworkSummary } from "./network-summary";
 import { NmapSummary } from "./nmap-summary";
@@ -12,6 +14,7 @@ import { TerminalPanel } from "./terminal-panel";
 type ResultPanelProps = {
   activeAction: ActionId;
   activeTab: TabId;
+  hashcatSummary: HashcatSummaryData;
   hydraSummary: HydraSummaryData;
   liveCommand: string;
   networkSummary: InterfaceSummary[];
@@ -22,6 +25,7 @@ type ResultPanelProps = {
 export function ResultPanel({
   activeAction,
   activeTab,
+  hashcatSummary,
   hydraSummary,
   liveCommand,
   networkSummary,
@@ -38,6 +42,10 @@ export function ResultPanel({
 
   if (activeAction === "hydra") {
     return <HydraSummary summary={hydraSummary} />;
+  }
+
+  if (activeAction === "hashcat") {
+    return <HashcatSummary summary={hashcatSummary} />;
   }
 
   return <NmapSummary summary={nmapSummary} />;

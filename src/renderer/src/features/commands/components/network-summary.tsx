@@ -8,7 +8,7 @@ export function NetworkSummary({ items }: NetworkSummaryProps) {
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-[11px] text-zinc-400">
-        Aucune information a afficher pour le moment.
+        Aucune information à afficher pour le moment.
       </div>
     );
   }
@@ -23,7 +23,7 @@ export function NetworkSummary({ items }: NetworkSummaryProps) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-medium text-white">{item.name}</h3>
-              <p className="mt-1 text-[11px] text-zinc-400">Etat: {item.state}</p>
+              <p className="mt-1 text-[11px] text-zinc-400">État: {item.state}</p>
             </div>
             <div className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
               interface

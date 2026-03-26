@@ -3,18 +3,23 @@ import { join } from "node:path";
 import type { FSWatcher } from "node:fs";
 import { app, BrowserWindow, ipcMain } from "electron";
 import type {
+  HashFileEntry,
   CommandRequest,
   CommandResult,
   WordlistEntry
 } from "../shared/commands";
 import { buildCommandLine, resolveCommand } from "./commands";
 import {
+  ensureHashDirectory,
   ensureWordlistDirectory,
+  listHashFiles,
   listWordlists,
+  watchHashFiles,
   watchWordlists
-} from "./wordlists";
+} from "./file-inventory";
 
 let wordlistWatcher: FSWatcher | null = null;
+let hashFileWatcher: FSWatcher | null = null;
 
 async function broadcastWordlists(): Promise<void> {
   const wordlists = await listWordlists();
@@ -24,8 +29,20 @@ async function broadcastWordlists(): Promise<void> {
   }
 }
 
+async function broadcastHashFiles(): Promise<void> {
+  const hashFiles = await listHashFiles();
+
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send("hashes:updated", hashFiles);
+  }
+}
+
 ipcMain.handle("wordlists:list", async (): Promise<WordlistEntry[]> => {
   return await listWordlists();
+});
+
+ipcMain.handle("hashes:list", async (): Promise<HashFileEntry[]> => {
+  return await listHashFiles();
 });
 
 ipcMain.handle(
@@ -141,10 +158,16 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   void ensureWordlistDirectory();
+  void ensureHashDirectory();
   void watchWordlists(async () => {
     await broadcastWordlists();
   }).then((watcher) => {
     wordlistWatcher = watcher;
+  });
+  void watchHashFiles(async () => {
+    await broadcastHashFiles();
+  }).then((watcher) => {
+    hashFileWatcher = watcher;
   });
   createWindow();
 
@@ -164,4 +187,6 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   wordlistWatcher?.close();
   wordlistWatcher = null;
+  hashFileWatcher?.close();
+  hashFileWatcher = null;
 });

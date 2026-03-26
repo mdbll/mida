@@ -15,13 +15,10 @@ export function ActionSidebar({
   return (
     <aside className="overflow-hidden border-b border-white/10 bg-zinc-950/90 px-2.5 py-4 lg:border-b-0 lg:border-r">
       <div className="mb-5 px-1.5">
-        <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Mida</p>
+        {/* <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Mida</p> */}
         <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-white">
-          Kali Commands
+          Mida
         </h1>
-        <p className="mt-1.5 text-[11px] leading-5 text-zinc-400">
-          Reseau local, scans Nmap et synthese exploitable.
-        </p>
       </div>
 
       <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">

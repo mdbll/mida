@@ -3,6 +3,7 @@ import type { ActionId, TabId } from "../../shared/commands";
 import { ACTIONS } from "@/features/commands/config";
 import {
   buildPayload,
+  parseHashcatOutput,
   parseHydraOutput,
   parseIpAddressOutput,
   parseNmapOutput
@@ -12,13 +13,19 @@ import { ActionSidebar } from "@/features/commands/components/action-sidebar";
 import { CommandForm } from "@/features/commands/components/command-form";
 import { ResultPanel } from "@/features/commands/components/result-panel";
 import { ResultTabs } from "@/features/commands/components/result-tabs";
-import { useCommandRunner, useWordlists } from "@/features/commands/use-command-runner";
+import {
+  useCommandRunner,
+  useHashFiles,
+  useWordlists
+} from "@/features/commands/use-command-runner";
 
 export default function App() {
   const [selectedAction, setSelectedAction] = useState<ActionId>("ipAddress");
   const [activeAction, setActiveAction] = useState<ActionId>("ipAddress");
   const [activeTab, setActiveTab] = useState<TabId>("terminal");
+  const [hashFile, setHashFile] = useState("hashes/hashes.txt");
   const [host, setHost] = useState("ssh");
+  const [mode, setMode] = useState("0");
   const [target, setTarget] = useState("192.168.1.1");
   const [selectedPortRange, setSelectedPortRange] = useState<string>("1-1000");
   const [customPortRange, setCustomPortRange] = useState("1-65535");
@@ -28,6 +35,7 @@ export default function App() {
 
   const { clearTerminal, isRunning, liveCommand, result, run, terminalOutput } =
     useCommandRunner();
+  const { hashFiles } = useHashFiles();
   const { wordlists } = useWordlists();
 
   const currentAction = ACTIONS.find((action) => action.id === selectedAction)!;
@@ -38,13 +46,23 @@ export default function App() {
       return;
     }
 
+    if (currentAction.needsHashFile && !hashFile.trim()) {
+      setValidationError("Un fichier hash est requis.");
+      return;
+    }
+
     if (currentAction.needsHost && !host.trim()) {
       setValidationError("Un host/service est requis.");
       return;
     }
 
+    if (currentAction.needsMode && !mode.trim()) {
+      setValidationError("Un mode hashcat est requis.");
+      return;
+    }
+
     if (currentAction.needsUsername && !username.trim()) {
-      setValidationError("Un user est requis.");
+      setValidationError("Un utilisateur est requis.");
       return;
     }
 
@@ -53,7 +71,7 @@ export default function App() {
       selectedPortRange === "custom" &&
       !customPortRange.trim()
     ) {
-      setValidationError("Une plage de ports personnalisee est requise.");
+      setValidationError("Une plage de ports personnalisée est requise.");
       return;
     }
 
@@ -70,7 +88,9 @@ export default function App() {
       actionId: selectedAction,
       payload: buildPayload(
         currentAction,
+        hashFile,
         host,
+        mode,
         target,
         selectedPortRange,
         customPortRange,
@@ -88,7 +108,10 @@ export default function App() {
   const nmapSummary = useMemo(
     () =>
       parseNmapOutput(
-        result && result.actionId !== "ipAddress" && result.actionId !== "hydra"
+        result &&
+          result.actionId !== "ipAddress" &&
+          result.actionId !== "hydra" &&
+          result.actionId !== "hashcat"
           ? result.stdout
           : ""
       ),
@@ -97,6 +120,11 @@ export default function App() {
 
   const hydraSummary = useMemo(
     () => parseHydraOutput(result?.actionId === "hydra" ? result.stdout : ""),
+    [result]
+  );
+
+  const hashcatSummary = useMemo(
+    () => parseHashcatOutput(result?.actionId === "hashcat" ? result.stdout : ""),
     [result]
   );
 
@@ -122,7 +150,10 @@ export default function App() {
               <CommandForm
                 action={currentAction}
                 customPortRange={customPortRange}
+                hashFile={hashFile}
+                hashFiles={hashFiles}
                 host={host}
+                mode={mode}
                 selectedPortRange={selectedPortRange}
                 target={target}
                 username={username}
@@ -130,7 +161,9 @@ export default function App() {
                 wordlist={wordlist}
                 wordlists={wordlists}
                 onCustomPortRangeChange={setCustomPortRange}
+                onHashFileChange={setHashFile}
                 onHostChange={setHost}
+                onModeChange={setMode}
                 onSelectedPortRangeChange={setSelectedPortRange}
                 onTargetChange={setTarget}
                 onUsernameChange={setUsername}
@@ -146,6 +179,7 @@ export default function App() {
               <ResultPanel
                 activeAction={activeAction}
                 activeTab={activeTab}
+                hashcatSummary={hashcatSummary}
                 hydraSummary={hydraSummary}
                 liveCommand={liveCommand}
                 networkSummary={networkSummary}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type {
   CommandEvent,
+  HashFileEntry,
   CommandRequest,
   CommandResult,
   WordlistEntry
@@ -9,7 +10,7 @@ import type {
 export function useCommandRunner() {
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<CommandResult | null>(null);
-  const [terminalOutput, setTerminalOutput] = useState("Aucune commande executee.");
+  const [terminalOutput, setTerminalOutput] = useState("Aucune commande exécutée.");
   const [liveCommand, setLiveCommand] = useState("");
   const activeRunIdRef = useRef<string | null>(null);
 
@@ -72,7 +73,7 @@ export function useCommandRunner() {
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Erreur inattendue pendant l'execution.";
+        error instanceof Error ? error.message : "Erreur inattendue pendant l'exécution.";
       const fallback: CommandResult = {
         ok: false,
         actionId: request.actionId,
@@ -136,4 +137,39 @@ export function useWordlists() {
   }, []);
 
   return { wordlists };
+}
+
+export function useHashFiles() {
+  const [hashFiles, setHashFiles] = useState<HashFileEntry[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadHashFiles() {
+      if (!window.mida?.listHashFiles) {
+        return;
+      }
+
+      const nextHashFiles = await window.mida.listHashFiles();
+
+      if (active) {
+        setHashFiles(nextHashFiles);
+      }
+    }
+
+    void loadHashFiles();
+
+    const unsubscribe = window.mida?.onHashFilesUpdated?.((nextHashFiles) => {
+      if (active) {
+        setHashFiles(nextHashFiles);
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, []);
+
+  return { hashFiles };
 }

@@ -5,7 +5,9 @@ export type ActionConfig = {
   label: string;
   description: string;
   category: "system" | "scan" | "bruteforce";
+  needsHashFile?: boolean;
   needsHost?: boolean;
+  needsMode?: boolean;
   needsTarget?: boolean;
   needsPortRange?: boolean;
   needsUsername?: boolean;
@@ -47,5 +49,15 @@ export type HydraSummary = {
     password: string;
     service: string;
   }>;
+  interestingFacts: string[];
+};
+
+export type HashcatSummary = {
+  hashFile: string | null;
+  mode: string | null;
+  recovered: string | null;
+  progress: string | null;
+  speed: string | null;
+  cracked: string[];
   interestingFacts: string[];
 };

@@ -4,12 +4,15 @@ export type ActionId =
   | "nmapQuick"
   | "nmapServices"
   | "hydra"
+  | "hashcat"
   | "nmapPorts";
 
 export type TabId = "terminal" | "summary";
 
 export type CommandPayload = {
+  hashFile?: string;
   host?: string;
+  mode?: string;
   target?: string;
   portRange?: string;
   username?: string;
@@ -39,6 +42,11 @@ export type CommandEvent = {
 };
 
 export type WordlistEntry = {
+  label: string;
+  value: string;
+};
+
+export type HashFileEntry = {
   label: string;
   value: string;
 };

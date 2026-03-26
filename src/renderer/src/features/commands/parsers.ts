@@ -1,6 +1,7 @@
 import type { CommandPayload, CommandResult } from "../../../../shared/commands";
 import type {
   ActionConfig,
+  HashcatSummary,
   HydraSummary,
   InterfaceSummary,
   NmapSummary
@@ -53,19 +54,19 @@ export function parseNmapOutput(output: string): NmapSummary {
   const hostsUpMatch = output.match(/(\d+)\s+hosts up/);
 
   if (hostsUpMatch?.[1]) {
-    interestingFacts.push(`${hostsUpMatch[1]} hote(s) actif(s) detecte(s).`);
+    interestingFacts.push(`${hostsUpMatch[1]} hôte(s) actif(s) détecté(s).`);
   }
 
   if (openPorts.length > 0) {
-    interestingFacts.push(`${openPorts.length} port(s) ouvert(s) detecte(s).`);
+    interestingFacts.push(`${openPorts.length} port(s) ouvert(s) détecté(s).`);
   }
 
   if (output.includes("Not shown:")) {
-    interestingFacts.push("Des ports supplementaires ont ete filtres ou fermes.");
+    interestingFacts.push("Des ports supplémentaires ont été filtrés ou fermés.");
   }
 
   if (output.includes("Service Info:")) {
-    interestingFacts.push("Des informations de service supplementaires ont ete detectees.");
+    interestingFacts.push("Des informations de service supplémentaires ont été détectées.");
   }
 
   return {
@@ -80,7 +81,9 @@ export function parseNmapOutput(output: string): NmapSummary {
 
 export function buildPayload(
   action: ActionConfig,
+  hashFile: string,
   host: string,
+  mode: string,
   target: string,
   selectedPortRange: string,
   customPortRange: string,
@@ -95,8 +98,16 @@ export function buildPayload(
     target: target.trim()
   };
 
+  if (action.needsHashFile) {
+    payload.hashFile = hashFile.trim();
+  }
+
   if (action.needsHost) {
     payload.host = host.trim();
+  }
+
+  if (action.needsMode) {
+    payload.mode = mode.trim();
   }
 
   if (action.needsUsername) {
@@ -113,6 +124,46 @@ export function buildPayload(
   }
 
   return payload;
+}
+
+export function parseHashcatOutput(output: string): HashcatSummary {
+  const mode = output.match(/Hash\.Mode\.*:\s*(.+)/)?.[1]?.trim() ?? null;
+  const hashFile = output.match(/Input\.File\.*:\s*(.+)/)?.[1]?.trim() ?? null;
+  const recovered = output.match(/Recovered\.*:\s*(.+)/)?.[1]?.trim() ?? null;
+  const progress = output.match(/Progress\.*:\s*(.+)/)?.[1]?.trim() ?? null;
+  const speed = output.match(/Speed\.\#\d+\.*:\s*(.+)/)?.[1]?.trim() ?? null;
+  const cracked = output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.includes(":") && !line.startsWith("Hash.") && !line.startsWith("Speed."));
+
+  const interestingFacts: string[] = [];
+
+  if (recovered) {
+    interestingFacts.push(`Récupération: ${recovered}`);
+  }
+
+  if (progress) {
+    interestingFacts.push(`Progression: ${progress}`);
+  }
+
+  if (speed) {
+    interestingFacts.push(`Vitesse: ${speed}`);
+  }
+
+  if (cracked.length > 0) {
+    interestingFacts.push(`${cracked.length} ligne(s) potentiellement craquée(s).`);
+  }
+
+  return {
+    hashFile,
+    mode,
+    recovered,
+    progress,
+    speed,
+    cracked,
+    interestingFacts
+  };
 }
 
 export function parseHydraOutput(output: string): HydraSummary {
@@ -133,7 +184,7 @@ export function parseHydraOutput(output: string): HydraSummary {
   const interestingFacts: string[] = [];
 
   if (credentials.length > 0) {
-    interestingFacts.push(`${credentials.length} credential(s) valide(s) trouve(s).`);
+    interestingFacts.push(`${credentials.length} identifiant(s) valide(s) trouvé(s).`);
   }
 
   if (attemptsInfo) {
@@ -141,7 +192,7 @@ export function parseHydraOutput(output: string): HydraSummary {
   }
 
   if (output.includes("[ERROR]")) {
-    interestingFacts.push("Hydra a retourne au moins une erreur.");
+    interestingFacts.push("Hydra a retourné au moins une erreur.");
   }
 
   return {
@@ -155,7 +206,7 @@ export function parseHydraOutput(output: string): HydraSummary {
 
 export function getTerminalOutput(result: CommandResult | null): string {
   if (!result) {
-    return "Aucune commande executee.";
+    return "Aucune commande exécutée.";
   }
 
   const blocks = [`$ ${result.command}`];

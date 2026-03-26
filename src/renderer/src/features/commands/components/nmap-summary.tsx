@@ -9,7 +9,7 @@ export function NmapSummary({ summary }: NmapSummaryProps) {
     <div className="grid gap-3">
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="Cible" value={summary.target ?? "N/A"} />
-        <MetricCard title="Etat" value={summary.hostState ?? "Inconnu"} />
+        <MetricCard title="État" value={summary.hostState ?? "Inconnu"} />
         <MetricCard title="Latence" value={summary.latency ?? "N/A"} />
         <MetricCard title="Ports ouverts" value={String(summary.openPorts.length)} />
       </section>
@@ -28,7 +28,7 @@ export function NmapSummary({ summary }: NmapSummaryProps) {
             ))
           ) : (
             <div className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-500">
-              Aucune synthese disponible pour le moment.
+              Aucune synthèse disponible pour le moment.
             </div>
           )}
         </div>
@@ -48,20 +48,20 @@ export function NmapSummary({ summary }: NmapSummaryProps) {
                   <p className="text-[11px] text-zinc-300">{port.state}</p>
                   <p className="text-[11px] text-zinc-300">{port.service}</p>
                   <p className="text-[11px] text-zinc-500">
-                    {port.version || "Version non detectee"}
+                    {port.version || "Version non détectée"}
                   </p>
                 </div>
               ))
             ) : (
               <div className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-500">
-                Aucun port ouvert detecte ou aucune sortie encore disponible.
+                Aucun port ouvert détecté ou aucune sortie encore disponible.
               </div>
             )}
           </div>
         </article>
 
         <article className="rounded-xl border border-white/10 bg-white/5 p-3.5">
-          <h3 className="text-sm font-medium text-white">Hotes vus</h3>
+          <h3 className="text-sm font-medium text-white">Hôtes vus</h3>
           <div className="mt-3 space-y-2">
             {summary.hostnames.length > 0 ? (
               summary.hostnames.map((host) => (
@@ -74,7 +74,7 @@ export function NmapSummary({ summary }: NmapSummaryProps) {
               ))
             ) : (
               <div className="rounded-lg bg-zinc-900/80 px-3 py-2 text-[11px] text-zinc-500">
-                Aucun hote liste.
+                Aucun hôte listé.
               </div>
             )}
           </div>
