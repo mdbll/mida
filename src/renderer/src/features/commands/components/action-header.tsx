@@ -15,21 +15,21 @@ export function ActionHeader({
   onRun
 }: ActionHeaderProps) {
   return (
-    <header className="shrink-0 border-b border-white/10 px-4 py-3 sm:px-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <header className="shrink-0 border-b border-white/10 px-5 py-4 sm:px-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           {/* <p className="text-[11px] text-zinc-500">Action sélectionnée</p> */}
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
             {action.label}
           </h2>
-          <p className="mt-1.5 max-w-2xl text-[11px] leading-5 text-zinc-400">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
             {action.description}
           </p>
-          <p className="mt-1 text-[11px] leading-5 text-zinc-500">{action.helper}</p>
+          <p className="mt-1.5 text-sm leading-6 text-zinc-500">{action.helper}</p>
         </div>
 
         <div className="flex items-center gap-3 self-start lg:self-auto">
-          <div className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-400">
+          <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-400">
             {platform}
           </div>
           <Button onClick={onRun} disabled={isRunning}>

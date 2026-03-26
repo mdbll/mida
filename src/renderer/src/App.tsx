@@ -130,7 +130,7 @@ export default function App() {
 
   return (
     <main className="h-screen overflow-hidden bg-zinc-950 text-zinc-100">
-      <div className="grid h-full grid-cols-1 lg:grid-cols-[220px_1fr]">
+      <div className="grid h-full grid-cols-1 lg:grid-cols-[260px_1fr]">
         <ActionSidebar
           actions={ACTIONS}
           selectedAction={selectedAction}
@@ -145,8 +145,8 @@ export default function App() {
             onRun={() => void handleRun()}
           />
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-            <div className="flex flex-col gap-4">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+            <div className="flex flex-col gap-5">
               <CommandForm
                 action={currentAction}
                 customPortRange={customPortRange}
